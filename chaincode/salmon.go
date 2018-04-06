@@ -10,7 +10,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
 )
@@ -36,6 +38,8 @@ func (t *SalmonChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response
 	var result []byte
 	var err error
 	switch fn {
+	case "initLedger":
+		result, err = initLedger(stub, args)
 	case "recordSalmon":
 		result, err = recordSalmon(stub, args)
 	case "changeSalmonHolder":
@@ -54,6 +58,32 @@ func (t *SalmonChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response
 
 	// Return the result as success payload
 	return shim.Success(result)
+}
+
+func initLedger(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	spawnCount := 100
+	if len(args) == 1 {
+		var err error
+		spawnCount, err = strconv.Atoi(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("read param spawnCount fail: %s", err)
+		}
+	}
+
+	for i := 1; i <= spawnCount; i++ {
+		_, err := recordSalmon(stub, []string{
+			strconv.Itoa(i),
+			randomdata.SillyName(),
+			randomdata.FullDateInRange("2016-08-01", "2018-08-22"),
+			randomdata.City(),
+			"fredrick",
+		})
+		if err != nil {
+			return nil, fmt.Errorf("Record salmon fail: %s", err)
+		}
+	}
+
+	return nil, nil
 }
 
 func recordSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
