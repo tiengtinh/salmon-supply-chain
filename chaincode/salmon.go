@@ -4,95 +4,167 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- package main
+package main
 
- import (
-	 "fmt"
- 
-	 "github.com/hyperledger/fabric/core/chaincode/shim"
-	 "github.com/hyperledger/fabric/protos/peer"
- )
- 
- // SimpleAsset implements a simple chaincode to manage an asset
- type SimpleAsset struct {
- }
- 
- // Init is called during chaincode instantiation to initialize any
- // data. Note that chaincode upgrade also calls this function to reset
- // or to migrate data.
- func (t *SimpleAsset) Init(stub shim.ChaincodeStubInterface) peer.Response {
-	 // Get the args from the transaction proposal
-	 args := stub.GetStringArgs()
-	 if len(args) != 2 {
-		 return shim.Error("Incorrect arguments. Expecting a key and a value")
-	 }
- 
-	 // Set up any variables or assets here by calling stub.PutState()
- 
-	 // We store the key and the value on the ledger
-	 err := stub.PutState(args[0], []byte(args[1]))
-	 if err != nil {
-		 return shim.Error(fmt.Sprintf("Failed to create asset: %s", args[0]))
-	 }
-	 return shim.Success(nil)
- }
- 
- // Invoke is called per transaction on the chaincode. Each transaction is
- // either a 'get' or a 'set' on the asset created by Init function. The Set
- // method may create a new asset by specifying a new key-value pair.
- func (t *SimpleAsset) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
-	 // Extract the function and args from the transaction proposal
-	 fn, args := stub.GetFunctionAndParameters()
- 
-	 var result string
-	 var err error
-	 if fn == "set" {
-		 result, err = set(stub, args)
-	 } else { // assume 'get' even if fn is nil
-		 result, err = get(stub, args)
-	 }
-	 if err != nil {
-		 return shim.Error(err.Error())
-	 }
- 
-	 // Return the result as success payload
-	 return shim.Success([]byte(result))
- }
- 
- // Set stores the asset (both key and value) on the ledger. If the key exists,
- // it will override the value with the new one
- func set(stub shim.ChaincodeStubInterface, args []string) (string, error) {
-	 if len(args) != 2 {
-		 return "", fmt.Errorf("Incorrect arguments. Expecting a key and a value")
-	 }
- 
-	 err := stub.PutState(args[0], []byte(args[1]))
-	 if err != nil {
-		 return "", fmt.Errorf("Failed to set asset: %s", args[0])
-	 }
-	 return args[1], nil
- }
- 
- // Get returns the value of the specified asset key
- func get(stub shim.ChaincodeStubInterface, args []string) (string, error) {
-	 if len(args) != 1 {
-		 return "", fmt.Errorf("Incorrect arguments. Expecting a key")
-	 }
- 
-	 value, err := stub.GetState(args[0])
-	 if err != nil {
-		 return "", fmt.Errorf("Failed to get asset: %s with error: %s", args[0], err)
-	 }
-	 if value == nil {
-		 return "", fmt.Errorf("Asset not found: %s", args[0])
-	 }
-	 return string(value), nil
- }
- 
- // main function starts up the chaincode in the container during instantiate
- func main() {
-	 if err := shim.Start(new(SimpleAsset)); err != nil {
-		 fmt.Printf("Error starting SimpleAsset chaincode: %s", err)
-	 }
- }
- 
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/protos/peer"
+)
+
+type Salmon struct {
+	Vessel   string `json:"vessel"`
+	Datetime string `json:"datetime"`
+	Location string `json:"location"`
+	Holder   string `json:"holder"`
+}
+
+type SalmonChaincode struct {
+}
+
+func (t *SalmonChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
+	return shim.Success(nil)
+}
+
+func (t *SalmonChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+	// Extract the function and args from the transaction proposal
+	fn, args := stub.GetFunctionAndParameters()
+
+	var result []byte
+	var err error
+	switch fn {
+	case "recordSalmon":
+		result, err = recordSalmon(stub, args)
+	case "changeSalmonHolder":
+		result, err = changeSalmonHolder(stub, args)
+	case "querySalmon":
+		result, err = querySalmon(stub, args)
+	case "queryAllSalmon":
+		result, err = queryAllSalmon(stub, args)
+	default:
+		return shim.Error("Unsupported function: " + fn)
+	}
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	// Return the result as success payload
+	return shim.Success(result)
+}
+
+func recordSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 5 {
+		return nil, fmt.Errorf("Incorrect arguments. Expecting 5")
+	}
+
+	id := args[0]
+	vessel := args[1]
+	datetime := args[2]
+	location := args[3]
+	holder := args[4]
+
+	salmon := Salmon{Vessel: vessel, Datetime: datetime, Location: location, Holder: holder}
+	data, err := json.Marshal(salmon)
+	if err != nil {
+		return nil, fmt.Errorf("marshal fail: %s", err)
+	}
+
+	err = stub.PutState(id, data)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to set asset: %s", args[0])
+	}
+
+	return nil, nil
+}
+
+func changeSalmonHolder(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("Incorrect arguments. Expecting 2")
+	}
+
+	id := args[0]
+	holder := args[1]
+
+	data, err := stub.GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("get salmon fail: %s", err)
+	}
+
+	var salmon Salmon
+	err = json.Unmarshal(data, &salmon)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal fail: %s", err)
+	}
+
+	salmon.Holder = holder
+
+	data, err = json.Marshal(salmon)
+	if err != nil {
+		return nil, fmt.Errorf("marshal fail: %s", err)
+	}
+
+	err = stub.PutState(id, data)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to set asset: %s", args[0])
+	}
+
+	return nil, nil
+}
+
+func querySalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("Incorrect arguments. Expecting 1")
+	}
+
+	id := args[0]
+	data, err := stub.GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("get salmon fail: %s", err)
+	}
+
+	return data, nil
+}
+
+func queryAllSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	iter, err := stub.GetStateByRange("", "")
+	if err != nil {
+		return nil, fmt.Errorf("get salmons fail: %s", err)
+	}
+	defer iter.Close()
+
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+
+	bArrayMemberAlreadyWritten := false
+	for iter.HasNext() {
+		queryResponse, err := iter.Next()
+		if err != nil {
+			return nil, fmt.Errorf("retrive next salmon fail: %s", err)
+		}
+
+		// Add a comma before array members, suppress it for the first array member
+		if bArrayMemberAlreadyWritten == true {
+			buffer.WriteString(",")
+		}
+		// Record is a JSON object, so we write as-is
+		buffer.WriteString(string(queryResponse.Value))
+		bArrayMemberAlreadyWritten = true
+	}
+
+	buffer.WriteString("]")
+
+	fmt.Printf("- queryAllCars:\n%s\n", buffer.String())
+
+	return buffer.Bytes(), nil
+}
+
+// main function starts up the chaincode in the container during instantiate
+func main() {
+	if err := shim.Start(new(SalmonChaincode)); err != nil {
+		fmt.Printf("Error starting SalmonChaincode: %s", err)
+	}
+}
