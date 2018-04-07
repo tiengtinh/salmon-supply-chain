@@ -4,7 +4,8 @@
   "description": "A salmon scenario using node.js SDK APIs",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "keywords": [
     "fabric-client sample app",
@@ -28,5 +29,8 @@
     "fs-extra": "^2.0.0",
     "jsonwebtoken": "^7.3.0",
     "log4js": "^0.6.38"
+  },
+  "devDependencies": {
+    "nodemon": "^1.17.3"
   }
 }
