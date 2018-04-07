@@ -156,7 +156,21 @@ func querySalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error
 		return nil, fmt.Errorf("get salmon fail: %s", err)
 	}
 
-	return data, nil
+	return marshalSalmonDocument(id, data), nil
+}
+
+func marshalSalmonDocument(id string, data []byte) []byte {
+	var salmon Salmon
+	json.Unmarshal(data, &salmon)
+
+	document := struct {
+		ID     string `json:"id"`
+		Salmon `json:",inline"`
+	}{id, salmon}
+
+	documentData, err := json.Marshal(document)
+
+	return documentData
 }
 
 func queryAllSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
@@ -192,8 +206,9 @@ func queryAllSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 		if bArrayMemberAlreadyWritten == true {
 			buffer.WriteString(",")
 		}
+
 		// Record is a JSON object, so we write as-is
-		buffer.WriteString(string(queryResponse.Value))
+		buffer.WriteString(string(marshalSalmonDocument(queryResponse.Value)))
 		bArrayMemberAlreadyWritten = true
 	}
 
