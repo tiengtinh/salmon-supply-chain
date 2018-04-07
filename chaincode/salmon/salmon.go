@@ -160,7 +160,19 @@ func querySalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error
 }
 
 func queryAllSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	iter, err := stub.GetStateByRange("", "")
+	if len(args) > 2 {
+		return nil, fmt.Errorf("Incorrect arguments. Expecting 0 to 2")
+	}
+
+	var startKey, endKey string
+	if len(args) > 0 {
+		startKey = args[0]
+	}
+	if len(args) > 1 {
+		endKey = args[1]
+	}
+
+	iter, err := stub.GetStateByRange(startKey, endKey)
 	if err != nil {
 		return nil, fmt.Errorf("get salmons fail: %s", err)
 	}
