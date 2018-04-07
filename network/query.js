@@ -20,7 +20,7 @@ var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('Query');
 
-var queryChaincode = async function(peer, channelName, chaincodeName, args, fcn, username, org_name) {
+var queryChaincode = async function(peers, channelName, chaincodeName, args, fcn, username, org_name) {
 	try {
 		// first setup the client for this org
 		var client = await helper.getClientForOrg(org_name, username);
@@ -34,7 +34,7 @@ var queryChaincode = async function(peer, channelName, chaincodeName, args, fcn,
 
 		// send query
 		var request = {
-			targets : [peer], //queryByChaincode allows for multiple targets
+			targets : peers, //queryByChaincode allows for multiple targets
 			chaincodeId: chaincodeName,
 			fcn: fcn,
 			args: args

@@ -5,6 +5,8 @@ const express = require('express');
 require('./context')
 const invoke = require('./invoke-transaction')
 const query = require('./query')
+const helper = require('./helper')
+var logger = helper.getLogger('server');
 
 // Constants
 const PORT = 8080;
@@ -16,6 +18,11 @@ app.get('/', (req, res) => {
   res.send('Home\n');
 });
 
+app.get('/profile', async (req, res) => {
+  const user1 = await helper.getRegisteredUser('user1', 'fredrick', true)
+  res.send(user1)
+})
+
 app.get('/salmons', async (req, res) => {
   try {
     const channelName = 'transfers'
@@ -23,7 +30,10 @@ app.get('/salmons', async (req, res) => {
     const fcn = "queryAllSalmon"
     const args = []
 
-    let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, 'admin', 'fredrick');
+    // const user1 = await helper.getRegisteredUser('user1', 'fredrick', true)
+    // logger.debug('user1', user1)
+
+    let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, 'user1', 'fredrick');
     res.send(message);
   } catch (err) {
     console.error(err)
