@@ -23,7 +23,7 @@ app.get('/salmons', async (req, res) => {
     const fcn = "queryAllSalmon"
     const args = []
 
-    let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, 'user1', 'fredrick');
+    let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, 'admin', 'fredrick');
     res.send(message);
   } catch (err) {
     console.error(err)
