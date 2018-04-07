@@ -8,6 +8,7 @@ var cors = require('cors');
 var session = require('express-session');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var util = require('util');
 
 require('./context')
 const invoke = require('./invoke-transaction')
@@ -100,8 +101,33 @@ app.post('/signin', async function(req, res) {
       res.json(getErrorMessage('\'orgName\''));
       return;
     }
-    
-    if (!allOrgs.includes(orgName) && !regulators.includes(orgName)) {
+
+    if (allOrgs.includes(orgName)) {
+      const username = 'user1' // just use user1 as default for now
+
+      var token = jwt.sign({
+        exp: Math.floor(Date.now() / 1000) + 36000,
+        username,
+        orgName: orgName
+      }, app.get('secret'));
+      let response = await helper.getRegisteredUser(username, orgName, true);
+      logger.debug('-- returned from registering the username %s for organization %s',username,orgName);
+      if (response && typeof response !== 'string') {
+        logger.debug('Successfully registered the username %s for organization %s',username,orgName);
+        response.token = token;
+        res.json(response);
+      } else {
+        logger.debug('Failed to register the username %s for organization %s with::%s',username,orgName,response);
+        res.json({success: false, message: response});
+      }
+    } else if (regulators.includes(orgName)) {
+      var token = jwt.sign({
+        exp: Math.floor(Date.now() / 1000) + 36000,
+        username: 'regulator',
+        orgName: 'regulator',
+      }, app.get('secret'));
+      res.json({success: true, token});
+    } else {
       res.json({
         success: false,
         message: "orgName doesn't exist."
@@ -109,23 +135,7 @@ app.post('/signin', async function(req, res) {
       return
     }
 
-    const username = 'user1' // just use user1 as default for now
-
-    var token = jwt.sign({
-      exp: Math.floor(Date.now() / 1000) + 36000,
-      username,
-      orgName: orgName
-    }, app.get('secret'));
-    let response = await helper.getRegisteredUser(username, orgName, true);
-    logger.debug('-- returned from registering the username %s for organization %s',username,orgName);
-    if (response && typeof response !== 'string') {
-      logger.debug('Successfully registered the username %s for organization %s',username,orgName);
-      response.token = token;
-      res.json(response);
-    } else {
-      logger.debug('Failed to register the username %s for organization %s with::%s',username,orgName,response);
-      res.json({success: false, message: response});
-    }
+    
   } catch (err) {
     console.error(err)
     res.status(500).send({error: err.message})
@@ -134,11 +144,14 @@ app.post('/signin', async function(req, res) {
 
 // anyone signed in can call this endpoint
 app.get('/salmons/:id', async (req, res) => {
+  logger.debug('username :' + req.username);
+  logger.debug('orgname:' + req.orgname);
   try {
     const channelName = 'transfers'
     const chaincodeName = 'salmon'
     const fcn = "querySalmon"
     const args = [req.params.id]
+    logger.debug('salmon_id:' + req.params.id);
 
     let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, req.username, req.orgname);
     res.send(message);
@@ -173,46 +186,52 @@ app.get('/salmons', async (req, res) => {
 
 // only fisherman can call this
 app.post('/salmons', async (req, res) => {
-  logger.debug('username :' + req.username);
-  logger.debug('orgname:' + req.orgname);
+  try {
+    logger.debug('username :' + req.username);
+    logger.debug('orgname:' + req.orgname);
 
-  if (!fishermans.includes(req.orgname)) {
-    res.json({
-      success: false,
-      message: "You're not authorized for this action"
-    })
-    return
+    if (!fishermans.includes(req.orgname)) {
+      res.json({
+        success: false,
+        message: "You're not authorized for this action"
+      })
+      return
+    }
+    
+    const {
+      id,
+      vessel,
+      datetime,
+      location,
+    } = req.body
+
+    if (!id) {
+      res.json(getErrorMessage('\'id\''));
+      return;
+    }
+    if (!vessel) {
+      res.json(getErrorMessage('\'vessel\''));
+      return;
+    }
+
+    const channelName = 'transfers'
+    const chaincodeName = 'salmon'
+    const fcn = "recordSalmon"
+    const args = [
+      id,
+      vessel,
+      datetime,
+      location,
+      req.orgname, // holder
+    ]
+    logger.debug('args: ', args)
+
+    const message = await invoke.invokeChaincode(['peer0.fredrick.coderschool.vn'], channelName, chaincodeName, fcn, args, req.username, req.orgname);
+    res.send(message);
+  } catch (err) {
+    console.error(err)
+    res.status(500).send({error: err.message})
   }
-  
-  const {
-    id,
-    vessel,
-    datetime,
-    location,
-  } = req.body
-
-  if (!id) {
-		res.json(getErrorMessage('\'id\''));
-		return;
-  }
-  if (!vessel) {
-		res.json(getErrorMessage('\'vessel\''));
-		return;
-  }
-
-  const channelName = 'transfers'
-  const chaincodeName = 'salmon'
-  const fcn = "recordSalmon"
-  const args = [
-    id,
-    vessel,
-    datetime,
-    location,
-    req.orgname, // holder
-  ]
-
-  const message = await invoke.invokeChaincode([], channelName, chaincodeName, fcn, args, req.username, req.orgname);
-	res.send(message);
 });
 
 // only restauranteur can call this
@@ -220,40 +239,40 @@ app.post('/salmons/:salmon_id/ownerships/claim', async (req, res) => {
   logger.debug('username :' + req.username);
   logger.debug('orgname:' + req.orgname);
 
-  if (!restauranteurs.includes(req.orgname)) {
-    res.json({
-      success: false,
-      message: "You're not authorized for this action"
-    })
-    return
-  }
-  
-  const {
-    id,
-    vessel,
-    datetime,
-    location,
-  } = req.body
+  try {
+    if (!restauranteurs.includes(req.orgname)) {
+      res.json({
+        success: false,
+        message: "You're not authorized for this action"
+      })
+      return
+    }
 
-  if (!id) {
-		res.json(getErrorMessage('\'id\''));
-		return;
-  }
-  if (!vessel) {
-		res.json(getErrorMessage('\'vessel\''));
-		return;
-  }
+    const id = req.params.salmon_id
 
-  const channelName = 'transfers'
-  const chaincodeName = 'salmon'
-  const fcn = "changeSalmonHolder"
-  const args = [
-    id,
-    req.orgname, // new holder
-  ]
+    if (!id) {
+      res.json(getErrorMessage('\'id\''));
+      return;
+    }
 
-  const message = await invoke.invokeChaincode([], channelName, chaincodeName, fcn, args, req.username, req.orgname);
-	res.send(message);
+    const channelName = 'transfers'
+    const chaincodeName = 'salmon'
+    const fcn = "changeSalmonHolder"
+    const args = [
+      id,
+      req.orgname, // new holder
+    ]
+
+    // TODO : get price deal
+
+    const changeHolderResult = await invoke.invokeChaincode(['peer0.fredrick.coderschool.vn'], channelName, chaincodeName, fcn, args, req.username, req.orgname);
+    res.send({
+      changeHolderResult,
+    });
+  } catch (err) {
+    console.error(err)
+    res.status(500).send({error: err.message})
+  }
 });
 
 app.listen(PORT, HOST);
