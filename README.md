@@ -26,7 +26,7 @@ cd $GOPATH/src/github.com/tiengtinh/salmon-supply-chain/chaincode/salmon && go g
 ```
 
 ```
-export SALMON=salmon2
+export SALMON=salmon
 export SALMON_VERSION=v2
 export ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/coderschool.vn/msp/tlscacerts/tlsca.coderschool.vn-cert.pem
 ```

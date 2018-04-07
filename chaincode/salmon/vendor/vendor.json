@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "06LjOczBTeuEZSSXYTs3mH/R8YU=",
+			"path": "github.com/Pallinder/go-randomdata",
+			"revision": "dab270d296c6c8fb98de3b4334bbd7d7b0ceca53",
+			"revisionTime": "2018-03-29T15:44:40Z"
+		}
+	],
+	"rootPath": "github.com/tiengtinh/salmon-supply-chain/chaincode/salmon"
+}
