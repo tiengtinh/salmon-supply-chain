@@ -175,7 +175,7 @@ app.get('/salmons', async (req, res) => {
     const fcn = "queryAllSalmon"
     const args = []
 
-    let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, 'user1', 'fredrick'); // use fisherman user to retrieve the data
+    let message = await query.queryChaincode([], channelName, chaincodeName, args, fcn, 'user1', 'fredrick'); // use fisherman user to retrieve the data because regulator doesn't have an user
     res.send(message);
   } catch (err) {
     console.error(err)
@@ -254,19 +254,34 @@ app.post('/salmons/:salmon_id/ownerships/claim', async (req, res) => {
       return;
     }
 
-    const channelName = 'transfers'
-    const chaincodeName = 'salmon'
-    const fcn = "changeSalmonHolder"
-    const args = [
-      id,
-      req.orgname, // new holder
-    ]
+    let agreement, changeHolderTrxId
+    {
+      const channelName = `fredrick-${ req.orgname }`
+      const chaincodeName = 'agreement'
+      const fcn = "queryAgreement"
+      const args = [
+        "1",
+      ]
 
-    // TODO : get price deal
+      const _agreement = await query.queryChaincode([], channelName, chaincodeName, args, fcn, req.username, req.orgname);
+      agreement = JSON.parse(_agreement)
+    }
 
-    const changeHolderResult = await invoke.invokeChaincode(['peer0.fredrick.coderschool.vn'], channelName, chaincodeName, fcn, args, req.username, req.orgname);
+    {
+      const channelName = 'transfers'
+      const chaincodeName = 'salmon'
+      const fcn = "changeSalmonHolder"
+      const args = [
+        id,
+        req.orgname, // new holder
+      ]
+
+      changeHolderTrxId = await invoke.invokeChaincode(['peer0.fredrick.coderschool.vn'], channelName, chaincodeName, fcn, args, req.username, req.orgname);
+    }
+
     res.send({
-      changeHolderResult,
+      agreement,
+      changeHolderTrxId,
     });
   } catch (err) {
     console.error(err)

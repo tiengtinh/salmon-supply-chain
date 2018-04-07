@@ -168,7 +168,7 @@ func marshalSalmonDocument(id string, data []byte) []byte {
 		Salmon `json:",inline"`
 	}{id, salmon}
 
-	documentData, err := json.Marshal(document)
+	documentData, _ := json.Marshal(document)
 
 	return documentData
 }
@@ -208,7 +208,7 @@ func queryAllSalmon(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 		}
 
 		// Record is a JSON object, so we write as-is
-		buffer.WriteString(string(marshalSalmonDocument(queryResponse.Value)))
+		buffer.WriteString(string(marshalSalmonDocument(queryResponse.Key, queryResponse.Value)))
 		bArrayMemberAlreadyWritten = true
 	}
 

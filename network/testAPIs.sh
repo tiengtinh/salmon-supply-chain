@@ -73,6 +73,7 @@ echo
 echo "My token is $TOKEN"
 echo
 echo "The story is my restaurant has received the salmon id 101 from Fredrick. So.. it's blockchain time! don't wanna be a cheater! Let's declare our ownership with that 101 salmon with the network"
+echo "And I'll tell ya a secret. We got special price deal of \$50 dolars per kilo which should be in the response bellow"
 echo
 RESP=$(
 curl -s -X POST \
