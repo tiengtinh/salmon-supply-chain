@@ -134,7 +134,6 @@ app.post('/signin', async function(req, res) {
       })
       return
     }
-
     
   } catch (err) {
     console.error(err)
