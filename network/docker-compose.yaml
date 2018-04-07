@@ -188,6 +188,8 @@ services:
     container_name: api.coderschool.vn
     build: ../api/
     ports:
-      - "8080:8080"
+      - "8081:8080"
+    volumes:
+      - ./../api/src:/usr/src/app/src
     networks:
       - salmon
