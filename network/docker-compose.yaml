@@ -183,13 +183,3 @@ services:
       - peer0.fredrick.coderschool.vn
     networks:
       - salmon
-
-  api.coderschool.vn:
-    container_name: api.coderschool.vn
-    build: ../api/
-    ports:
-      - "8081:8080"
-    volumes:
-      - ./../api/src:/usr/src/app/src
-    networks:
-      - salmon
