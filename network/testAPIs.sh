@@ -95,6 +95,36 @@ echo
 echo "Member of restauranteur Alice out!"
 echo
 
+echo "============"
+echo
+echo "Hey there! It's member of restauranteur Bob. I deal in fair price"
+echo
+echo "signing in"
+echo
+RESP_TOKEN=$(
+curl -s -X POST \
+  http://localhost:8080/signin \
+  -H "content-type: application/x-www-form-urlencoded" \
+  -d 'orgName=bob'
+)
+echo $RESP_TOKEN
+TOKEN=$(echo $RESP_TOKEN | jq ".token" | sed "s/\"//g")
+echo
+echo "My token is $TOKEN"
+echo
+echo "My restaurant has received the salmon id 1 from Fredrick and I will claim that in the blockchain. Also, I use fair price \$100 per salmon not like some shady certain other who got a discount (don't tell anyone, I can't see other people agreement from the blockchian just myself, it's just people talk, you know)"
+echo
+RESP=$(
+curl -s -X POST \
+  http://localhost:8080/salmons/101/ownerships/claim \
+  -H "authorization: Bearer $TOKEN" \
+  -H "content-type: application/json" \
+)
+echo $RESP
+echo
+echo "Member of restauranteur Bob out!"
+echo
+
 
 echo "============"
 echo
