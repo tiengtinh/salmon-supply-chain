@@ -110,7 +110,7 @@ app.post('/signin', async function(req, res) {
         username,
         orgName: orgName
       }, app.get('secret'));
-      let response = await helper.getClientForOrg(username, orgName, true);
+      let response = await helper.getRegisteredUser(username, orgName, true);
       logger.debug('-- returned from get the username %s for organization %s',username,orgName);
       if (response && typeof response !== 'string') {
         logger.debug('Successfully GET the username %s for organization %s',username,orgName);

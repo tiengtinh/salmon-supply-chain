@@ -7,7 +7,7 @@ export ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/orde
 echo "=== Setting up salmon chaincode"
 
 export SALMON=salmon
-export SALMON_VERSION=v4
+export SALMON_VERSION=v5
 
 # intall
 docker exec cli.coderschool.vn peer chaincode install --name $SALMON --version $SALMON_VERSION --lang golang --path github.com/tiengtinh/salmon-supply-chain/chaincode/salmon
@@ -23,7 +23,7 @@ docker exec cli.coderschool.vn peer chaincode invoke --tls true --cafile $ORDERE
 echo "=== Setting up agreement chaincode on fredrick-alice channel"
 
 export AGREEMENT=agreement
-export AGREEMENT_VERSION=v2
+export AGREEMENT_VERSION=v5
 
 # intall
 docker exec cli.coderschool.vn peer chaincode install --name $AGREEMENT --version $AGREEMENT_VERSION --lang golang --path github.com/tiengtinh/salmon-supply-chain/chaincode/agreement
