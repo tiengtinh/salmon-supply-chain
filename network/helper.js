@@ -113,9 +113,23 @@ var getRegisteredUser = async function(username, userOrg, isJson) {
 
 };
 
+var revokeUser = async function(username, userOrg) {
+	try {
+		var client = await getClientForOrg(userOrg);
+		logger.debug('Successfully initialized the credential stores');
 
-var setupChaincodeDeploy = function() {
-	process.env.GOPATH = path.join(__dirname, hfc.getConfigSetting('CC_SRC_PATH'));
+		let adminUserObj = await client.setUserContext({username: 'admin', password: 'adminpw'});
+		let caClient = client.getCertificateAuthority();
+
+		const revokeResult = await caClient.revoke({
+			enrollmentID: username,
+		}, adminUserObj)
+		logger.debug('revokeResult: ', revokeResult)
+		return revokeResult
+	} catch(error) {
+		logger.error('Failed to get registered user: %s with error: %s', username, error.toString());
+		return 'failed '+error.toString();
+	}
 };
 
 var getLogger = function(moduleName) {
@@ -126,5 +140,5 @@ var getLogger = function(moduleName) {
 
 exports.getClientForOrg = getClientForOrg;
 exports.getLogger = getLogger;
-exports.setupChaincodeDeploy = setupChaincodeDeploy;
 exports.getRegisteredUser = getRegisteredUser;
+exports.revokeUser = revokeUser;

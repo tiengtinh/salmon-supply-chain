@@ -110,14 +110,14 @@ app.post('/signin', async function(req, res) {
         username,
         orgName: orgName
       }, app.get('secret'));
-      let response = await helper.getRegisteredUser(username, orgName, true);
-      logger.debug('-- returned from registering the username %s for organization %s',username,orgName);
+      let response = await helper.getClientForOrg(username, orgName, true);
+      logger.debug('-- returned from get the username %s for organization %s',username,orgName);
       if (response && typeof response !== 'string') {
-        logger.debug('Successfully registered the username %s for organization %s',username,orgName);
+        logger.debug('Successfully GET the username %s for organization %s',username,orgName);
         response.token = token;
         res.json(response);
       } else {
-        logger.debug('Failed to register the username %s for organization %s with::%s',username,orgName,response);
+        logger.debug('Failed to get the username %s for organization %s with::%s',username,orgName,response);
         res.json({success: false, message: response});
       }
     } else if (regulators.includes(orgName)) {
@@ -288,6 +288,50 @@ app.post('/salmons/:salmon_id/ownerships/claim', async (req, res) => {
     res.status(500).send({error: err.message})
   }
 });
+
+// only regulator can call this
+app.post('/orgs/:orgname/users/:username/revoke', async (req, res) => {
+  logger.debug('orgname:' + req.orgname);
+  if (!regulators.includes(req.orgname)) {
+    res.status(401).json({
+      message: "You're not authorized for this information"
+    })
+  }
+
+  try {
+    const message = await helper.revokeUser(req.params.username, req.params.orgname)
+    res.send(message);
+  } catch (err) {
+    console.error(err)
+    res.status(500).send({error: err.message})
+  }
+})
+
+// only regulator can call this
+app.post('/orgs/:orgname/users/:username/enroll', async (req, res) => {
+  logger.debug('orgname:' + req.orgname);
+  if (!regulators.includes(req.orgname)) {
+    res.status(401).json({
+      message: "You're not authorized for this information"
+    })
+  }
+
+  try {
+    const {username, orgname} = req.params
+    const response = await helper.getRegisteredUser(username, orgname, true)
+    logger.debug('-- returned from registering the username %s for organization %s',username,orgname);
+    if (response && typeof response !== 'string') {
+      logger.debug('Successfully registered the username %s for organization %s',username,orgname);
+      res.json(response);
+    } else {
+      logger.debug('Failed to register the username %s for organization %s with::%s',username,orgname,response);
+      res.json({success: false, message: response});
+    }
+  } catch (err) {
+    console.error(err)
+    res.status(500).send({error: err.message})
+  }
+})
 
 app.listen(PORT, HOST);
 console.log(`Running on http://${HOST}:${PORT}`);

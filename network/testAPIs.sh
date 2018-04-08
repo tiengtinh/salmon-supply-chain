@@ -54,7 +54,6 @@ echo "Fisherman of Fredrick out!"
 echo
 
 
-
 echo "============"
 echo
 echo "Hey there! It's member of restauranteur Alice. It's my turn now"
@@ -97,10 +96,8 @@ echo "Member of restauranteur Alice out!"
 echo
 
 
-
 echo "============"
 echo
-
 echo "Yo man! I'm a regulator here. It's my time to shine"
 echo
 echo "signing in"
@@ -126,5 +123,29 @@ curl -s -X GET \
 )
 echo $RESP
 echo
-echo "(Had a quick glance) Look like all is good! Regulator retires for the night!"
+echo "(Had a quick glance) Look not ok to me about this Fredrick user2. And... he didn't give me any coffee money this month. Definitely very fishy alright! I will revoke his rights!"
+echo
+RESP=$(
+curl -s -X POST \
+  http://localhost:8080/orgs/fredrick/users/user2/revoke \
+  -H "authorization: Bearer $TOKEN" \
+  -H "content-type: application/json"
+)
+echo $RESP
+# echo
+# NOTE : It seems after getting revoked, it's not possible to reenroll that same username (enrollmentID) https://fabric-sdk-node.github.io/FabricCAClient.html#revoke__anchor
+# sleep 3
+# echo "Fredrick - user2: (in a furious tone) What the heck! I did send you some coffee this month. Didn't I?"
+# echo
+# echo "Regulator: whoopsie doopsie! I made a mistake. Will add you back now"
+# echo 
+# RESP=$(
+# curl -s -X POST \
+#   http://localhost:8080/orgs/fredrick/users/user2/enroll \
+#   -H "authorization: Bearer $TOKEN" \
+#   -H "content-type: application/json"
+# )
+# echo $RESP
+echo
+echo "Great job myself! Regulator retires for the night!"
 echo

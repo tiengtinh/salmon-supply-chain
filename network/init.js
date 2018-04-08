@@ -9,16 +9,11 @@ var logger = log4js.getLogger('Helper');
 logger.setLevel('DEBUG');
 hfc.setLogger(logger);
 
-// indicate to the application where the setup file is located so it able
-// to have the hfc load it to initalize the fabric client instance
-hfc.setConfigSetting('network-connection-profile-path',path.join(__dirname, 'config', 'network-config.yaml'));
-hfc.setConfigSetting('fredrick-connection-profile-path',path.join(__dirname, 'config', 'fredrick.yaml'));
-hfc.setConfigSetting('alice-connection-profile-path',path.join(__dirname, 'config', 'alice.yaml'));
-hfc.setConfigSetting('bob-connection-profile-path',path.join(__dirname, 'config', 'bob.yaml'));
+require('./context')
 
-const getRegisteredUser = require('./getRegisteredUser')
 const createChannel = require('./createChannel')
 const joinChannel = require('./joinChannel')
+const {getRegisteredUser} = require('./helper')
 
 async function start() {
   try {
@@ -27,6 +22,8 @@ async function start() {
     
     const fredrickUser1 = await getRegisteredUser('user1', 'fredrick', true)
     logger.info('fredrickUser1: ', fredrickUser1)
+    const fredrickUser2 = await getRegisteredUser('user2', 'fredrick', true)
+    logger.info('fredrickUser2: ', fredrickUser2)
     const aliceUser1 = await getRegisteredUser('user1', 'alice', true)
     logger.info('aliceUser1: ', aliceUser1)
     const bobUser1 = await getRegisteredUser('user1', 'bob', true)
